@@ -1,0 +1,98 @@
+---
+# tasks file for logstash
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Check folder exists
+  stat:
+    path: "{{ logstash_path }}/{{ logstash_folder }}"
+  register: folder_logstash
+
+- name: Install Java
+  become: yes
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ required_package }}"
+  when: folder_logstash.stat.exists == False
+
+- name: Create group
+  become: yes
+  group:
+    name: "{{ logstash_group }}"
+    state: present
+    system: yes
+  when: folder_logstash.stat.exists == False
+
+- name: Create user
+  become: yes
+  user:
+    name: "{{ logstash_user }}"
+    state: present
+    system: yes
+  when: folder_logstash.stat.exists == False
+
+- name: Get logstash
+  become: yes
+  unarchive:
+    src: "{{ logstash_dl }}"
+    dest: "{{ logstash_path }}"
+    remote_src: yes
+  when: folder_logstash.stat.exists == False
+
+- name: jvm option
+  become: yes
+  template:
+    src: jvm.options.j2
+    dest: "{{ logstash_path }}/{{ logstash_folder }}/config/jvm.options"
+    owner: "{{ logstash_user }}"
+    group: "{{ logstash_group }}"
+  when: folder_logstash.stat.exists == False
+
+- name: Set user as owner
+  become: yes
+  file:
+    path: "{{ logstash_path }}/{{ logstash_folder }}"
+    owner: "{{ logstash_user }}"
+    group: "{{ logstash_group }}"
+  when: folder_logstash.stat.exists == False
+
+- name: Create config file
+  become: yes
+  template:
+    src: logstash.conf.j2
+    dest: "{{ logstash_path }}/{{ logstash_folder }}/bin/logstash.conf"
+    owner: "{{ logstash_user }}"
+    group: "{{ logstash_group }}"
+  when: folder_logstash.stat.exists == False
+
+- name: Set user as owner
+  become: yes
+  file:
+    path: "{{ logstash_path }}/{{ logstash_folder }}"
+    owner: "{{ logstash_user }}"
+    group: "{{ logstash_group }}"
+    recurse: yes
+  when: folder_logstash.stat.exists == False
+
+- name: Install plugin
+  become: yes
+  shell: "{{ logstash_path }}/{{ logstash_folder }}/bin/logstash-plugin install {{ item }}"
+  with_items: "{{ kibana_plugins }}"
+  when: folder_logstash.stat.exists == False and not kibana_plugins is none
+
+- name: Create systemd
+  become: yes
+  template:
+    src: logstash.service.j2
+    dest: /etc/systemd/system/logstash.service
+  when: folder_logstash.stat.exists == False
+
+- name: Start Service
+  become: yes
+  systemd:
+    name: logstash
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: folder_logstash.stat.exists == False

@@ -1,0 +1,16 @@
+---
+# defaults file for logstash
+logstash_group: logstash
+logstash_user: logstash
+
+logstash_path: /opt
+logstash_version: 6.4.0
+logstash_folder: logstash-{{ logstash_version }}
+logstash_dl: https://artifacts.elastic.co/downloads/logstash/{{ logstash_folder }}.tar.gz
+
+elasticsearch_address: localhost:9200
+xms_value: 1g
+xmx_value: 2g
+
+kibana_plugins:
+#  - logstash-output-syslog

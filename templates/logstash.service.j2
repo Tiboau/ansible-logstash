@@ -1,0 +1,11 @@
+[Unit]
+Description=Logstash
+Documentation=https://www.elastic.co/guide/en/logstash/current/getting-started-with-logstash.html
+
+[Service]
+User={{ logstash_group }}
+Group={{ logstash_user }}
+ExecStart={{ logstash_path }}/{{ logstash_folder }}/bin/logstash -f {{ logstash_path }}/{{ logstash_folder }}/bin/logstash.conf
+
+[Install]
+WantedBy=multi-user.target
